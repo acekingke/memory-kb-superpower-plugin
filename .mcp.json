@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "memory-kb": {
+      "command": "node",
+      "args": [
+        "./mcp/server.js"
+      ]
+    }
+  }
+}

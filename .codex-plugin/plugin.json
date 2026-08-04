@@ -1,0 +1,36 @@
+{
+  "name": "memory-kb-superpower-plugin",
+  "version": "0.1.0",
+  "description": "A generic Scheme-backed memory, business modeling, and reasoning plugin for AI agents.",
+  "author": {
+    "name": "kyc"
+  },
+  "license": "MIT",
+  "keywords": [
+    "memory",
+    "reasoning",
+    "scheme",
+    "knowledge-base",
+    "business-modeling"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Memory KB Superpower",
+    "shortDescription": "Scheme-backed memory and constraint reasoning.",
+    "longDescription": "Maintains a generic knowledge base, models business domains, and checks AI actions against remembered constraints using MIT Scheme.",
+    "developerName": "kyc",
+    "category": "Productivity",
+    "capabilities": [
+      "Memory",
+      "Reasoning",
+      "Business Modeling"
+    ],
+    "defaultPrompt": [
+      "Remember this as a project constraint.",
+      "Model this business domain before coding.",
+      "/memory-explain last rejection"
+    ],
+    "brandColor": "#2563EB"
+  }
+}
