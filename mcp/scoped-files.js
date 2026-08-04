@@ -20,8 +20,14 @@ function repoKey(context = {}) {
   return null;
 }
 
+function storageRoot() {
+  return process.env.MEMORY_KB_STORAGE_ROOT
+    ? path.resolve(process.env.MEMORY_KB_STORAGE_ROOT)
+    : path.join(ROOT, "storage");
+}
+
 function userDir(userId) {
-  return path.join(ROOT, "storage", "users", safeSegment(userId));
+  return path.join(storageRoot(), "users", safeSegment(userId));
 }
 
 function scopedReadFiles(userId, context = {}) {
