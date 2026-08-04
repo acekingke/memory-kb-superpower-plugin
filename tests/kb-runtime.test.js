@@ -80,5 +80,4 @@ test("context_files lists read paths with exists/missing markers", async () => {
   assert.equal(r.ok, true);
   assert.match(r.stdout, /exists\s+.*users\/alice\/global\.scm/);
   assert.match(r.stdout, /exists\s+.*users\/alice\/repos\/alpha\/kb\.scm/);
-  assert.match(r.stdout, /missing\s+.*users\/alice\/projects/);
 });

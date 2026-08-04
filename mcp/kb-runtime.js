@@ -7,8 +7,7 @@ const path = require("node:path");
 
 const {
   scopedReadFiles,
-  scopedWriteFile,
-  safeSegment
+  scopedWriteFile
 } = require("./scoped-files");
 
 const ROOT = path.resolve(__dirname, "..");
@@ -145,24 +144,6 @@ async function runTool(userId, toolName, args = {}) {
       const lines = scopedReadFiles(userId, context).map(
         (f) => `${fs.existsSync(f) ? "exists" : "missing"} ${f}`
       );
-      // Also list slot directories for scopes not present in context, marked
-      // missing, so callers can see the full canonical layout.
-      const userRoot = path.join(
-        process.env.MEMORY_KB_STORAGE_ROOT
-          ? path.resolve(process.env.MEMORY_KB_STORAGE_ROOT)
-          : path.join(ROOT, "storage"),
-        "users",
-        safeSegment(userId)
-      );
-      if (!context.repo_id && !context.repo_path) {
-        lines.push(`missing ${path.join(userRoot, "repos")}`);
-      }
-      if (!context.project_id) {
-        lines.push(`missing ${path.join(userRoot, "projects")}`);
-      }
-      if (!context.session_id) {
-        lines.push(`missing ${path.join(userRoot, "sessions")}`);
-      }
       return { ok: true, status: 0, stdout: lines.join("\n") + "\n", stderr: "" };
     }
     default:
