@@ -129,16 +129,16 @@ async function runTool(userId, toolName, args = {}) {
           stderr: `${err.message}\n`
         };
       }
-      const kb = await composeKb(userId, context);
-      const testResult = await runSchemeWithCleanup(
-        kb,
-        `(cli-test-fact (quote ${args.fact}))`
-      );
-      if (!testResult.ok) return testResult;
-      await withWriteLock(writeTarget.path, async () => {
+      return withWriteLock(writeTarget.path, async () => {
+        const kb = await composeKb(userId, context);
+        const testResult = await runSchemeWithCleanup(
+          kb,
+          `(cli-test-fact (quote ${args.fact}))`
+        );
+        if (!testResult.ok) return testResult;
         appendFact(writeTarget.path, args.fact);
+        return testResult;
       });
-      return testResult;
     }
     case "memory_kb_context_files": {
       const lines = scopedReadFiles(userId, context).map(

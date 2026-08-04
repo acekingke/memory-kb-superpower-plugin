@@ -8,7 +8,8 @@ const ROOT = path.resolve(__dirname, "..");
 const {
   repoKey,
   scopedReadFiles,
-  scopedWriteFile
+  scopedWriteFile,
+  safeSegment
 } = require("../mcp/scoped-files");
 
 test("repoKey prefers repo_id over repo_path", () => {
@@ -71,4 +72,13 @@ test("scopedWriteFile throws MISSING_CONTEXT when target scope has no context", 
     () => scopedWriteFile("alice", {}, "repo"),
     (err) => err.code === "MISSING_CONTEXT"
   );
+});
+
+test("safeSegment neutralises dot segments", () => {
+  assert.equal(safeSegment(".."), "default");
+  assert.equal(safeSegment("."), "default");
+  // slashes become dashes: "../.." → "..-.." (not a parent ref)
+  assert.equal(safeSegment("../.."), "..-..");
+  // dots inside names still fine
+  assert.equal(safeSegment("foo.txt"), "foo.txt");
 });

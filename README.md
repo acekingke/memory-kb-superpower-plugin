@@ -88,6 +88,13 @@ To expose the server to multiple remote clients:
 Each token maps to an isolated `storage/users/<user_id>/` tree; tenants
 cannot see each other's facts. See `storage/README.md` for the layout.
 
+**Trust model:** the Scheme subprocess runs under the Node process's OS user
+and has unrestricted filesystem access via MIT Scheme primitives. Tenants are
+isolated at the routing layer (each token sees only its own
+`storage/users/<user_id>/` tree), not at the OS level. Deploy this server
+only when all token holders are mutually trusted; do not expose it to
+adversarial tenants.
+
 Environment variables:
 
 - `PORT` — listen port (default `3000`)

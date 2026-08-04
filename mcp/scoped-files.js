@@ -5,13 +5,13 @@ const path = require("node:path");
 const ROOT = path.resolve(__dirname, "..");
 
 function safeSegment(value) {
-  return (
+  const seg =
     String(value)
       .trim()
       .replace(/[^A-Za-z0-9._-]+/g, "-")
       .replace(/^-+|-+$/g, "")
-      .slice(0, 96) || "default"
-  );
+      .slice(0, 96) || "default";
+  return seg === "." || seg === ".." ? "default" : seg;
 }
 
 function repoKey(context = {}) {
