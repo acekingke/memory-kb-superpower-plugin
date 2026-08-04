@@ -65,10 +65,35 @@ Available MCP tools:
 - `memory_kb_recall`
 - `memory_kb_before_action`
 - `memory_kb_explain`
+- `memory_kb_context_files`
 - `memory_kb_remember_fact`
 
 The MCP server wraps the existing MIT Scheme scripts. It keeps normal checks
 concise; provenance is shown only through `memory_kb_explain`.
+
+### HTTP transport (multi-tenant)
+
+To expose the server to multiple remote clients:
+
+1. Copy `config/tokens.example.json` to `config/tokens.json` and replace
+   the example entries with real `(token, user_id)` pairs. Generate tokens
+   with `openssl rand -hex 32`. `chmod 600 config/tokens.json`.
+2. Start the HTTP server:
+
+       PORT=3000 npm run mcp:http
+
+3. Point MCP clients at `http://<host>:3000/mcp` with header
+   `Authorization: Bearer <token>`.
+
+Each token maps to an isolated `storage/users/<user_id>/` tree; tenants
+cannot see each other's facts. See `storage/README.md` for the layout.
+
+Environment variables:
+
+- `PORT` — listen port (default `3000`)
+- `MEMORY_KB_TOKENS_PATH` — override tokens file location
+- `MEMORY_KB_STORAGE_ROOT` — override storage root (useful for tests)
+- `MEMORY_KB_USER` — stdio-only: override local user identity
 
 Smoke test:
 
