@@ -1,39 +1,47 @@
 # Scoped Storage
 
-Memory KB can support multi-user and multi-project isolation by composing a
-temporary knowledge base from scoped files.
+Memory KB isolates each tenant's facts under `storage/users/<user_id>/`.
+The shared engine (`kb/engine.scm`) and generic rule base (`kb/kb.scm`)
+are common to all tenants.
 
-MCP tools may receive an optional `context` object:
+## Layout
 
-```json
-{
-  "user_id": "kyc",
-  "project_id": "AlphaZero",
-  "repo_path": "/Users/kyc/homework/tmp/AlphaZero",
-  "session_id": "session-20260728"
-}
-```
+    storage/users/<user_id>/
+      global.scm                       # user-global facts
+      repos/<repo_key>/kb.scm          # facts scoped to (user, repo)
+      projects/<project_id>/kb.scm     # facts scoped to (user, project)
+      sessions/<session_id>/kb.scm     # facts scoped to (user, session)
 
-The server should load scoped files in this order:
+`<repo_key>` is `context.repo_id` if provided, else
+`path.basename(context.repo_path)`, sanitised to `[A-Za-z0-9._-]`.
 
-```text
-kb/engine.scm
-kb/kb.scm
-storage/users/<user_id>/global.scm
-storage/repos/<repo_id-or-repo-basename>/kb.scm
-storage/projects/<project_id>/kb.scm
-storage/sessions/<session_id>/kb.scm
-kb/run.scm
-```
+## Load Order
 
-Missing scoped files are skipped.
+For each tool call, the runtime composes a temporary KB by concatenating:
 
-`memory_kb_remember_fact` should write to the most specific available scope by
-default:
+    kb/kb.scm                          # shared generic rules
+    storage/users/<u>/global.scm       (if exists)
+    storage/users/<u>/repos/<r>/kb.scm     (if context has repo)
+    storage/users/<u>/projects/<p>/kb.scm  (if context has project_id)
+    storage/users/<u>/sessions/<s>/kb.scm  (if context has session_id)
 
-```text
-session > project > repo > user
-```
+The engine (`kb/engine.scm`) and CLI entrypoints (`kb/run.scm`) are loaded
+around this composed KB by the runtime.
 
-This keeps the Scheme engine pure. The MCP server owns context selection,
-storage isolation, and temporary KB composition.
+## Write Target
+
+`memory_kb_remember_fact` writes to the most specific scope present in
+`context`:
+
+    session > project > repo > user-global
+
+`target_scope` overrides the choice. Requesting a scope without the
+matching context field returns an error.
+
+## Identity
+
+- **HTTP transport:** the bearer token in `Authorization: Bearer <token>`
+  is looked up in `config/tokens.json`. The resolved `user_id` overrides
+  any `context.user_id` the client sends.
+- **stdio transport:** `MEMORY_KB_USER` env var, falling back to the OS
+  username.

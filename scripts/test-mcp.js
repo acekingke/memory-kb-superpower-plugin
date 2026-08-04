@@ -6,7 +6,7 @@ const path = require("node:path");
 const readline = require("node:readline");
 
 const root = path.resolve(__dirname, "..");
-const server = spawn(process.execPath, [path.join(root, "mcp", "server.js")], {
+const server = spawn(process.execPath, [path.join(root, "mcp", "server-stdio.js")], {
   cwd: root,
   shell: false
 });

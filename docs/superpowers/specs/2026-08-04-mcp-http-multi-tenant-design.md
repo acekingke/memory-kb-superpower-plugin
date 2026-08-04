@@ -92,7 +92,7 @@ The composed file is piped to `mit-scheme --quiet --batch-mode`, mirroring how e
 
 1. Client sends `Authorization: Bearer <token>`.
 2. `auth.js` looks up the token. If missing or unknown → `401 Unauthorized`, request never reaches MCP layer.
-3. On success, the server forces `context.user_id = <resolved user_id>` for every `tools/call`. If the client supplied a different `user_id` in `context`, the request is rejected with a JSON-RPC error (`-32602`); the token is the source of truth.
+3. On success, the server forces `context.user_id = <resolved user_id>` for every `tools/call`. The `context` schema does not include a `user_id` field; if a client sends one, zod silently strips it and the token-derived `user_id` is used. The token is the source of truth; there is no explicit rejection of client-supplied `user_id`.
 
 ## Tool Behaviour Changes
 
@@ -114,7 +114,7 @@ For the stdio transport there is no bearer token; the user is identified by the 
 | Case | Behaviour |
 |---|---|
 | Missing/unknown token | HTTP 401, no MCP processing. |
-| `context.user_id` conflicts with token | JSON-RPC `-32602` invalid params. |
+| `context.user_id` supplied by client | Silently stripped by zod; token-derived `user_id` wins. No explicit rejection. |
 | `target_scope` requested but required context missing (e.g. `target_scope=repo` without `repo_id`/`repo_path`) | Tool returns error describing the missing context field. |
 | Scheme engine failure | Tool returns stderr; existing behaviour. |
 
