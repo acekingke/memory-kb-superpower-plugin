@@ -3,7 +3,7 @@
     "memory-kb": {
       "command": "node",
       "args": [
-        "./mcp/server.js"
+        "./mcp/server-stdio.js"
       ]
     }
   }
