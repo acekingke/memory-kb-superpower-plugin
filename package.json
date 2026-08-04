@@ -5,7 +5,7 @@
   "description": "Generic Scheme-backed memory and reasoning plugin with MCP interface",
   "main": "mcp/server-stdio.js",
   "scripts": {
-    "test": "node --test tests/",
+    "test": "node --test 'tests/**/*.test.js'",
     "mcp:stdio": "node mcp/server-stdio.js",
     "mcp:http": "node mcp/server-http.js",
     "smoke:mcp": "node scripts/test-mcp.js"
