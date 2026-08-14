@@ -1,5 +1,27 @@
 ;;; engine.scm -- generic forward-chaining inference engine.
 
+;; Tail-recursive replacements for mit-scheme's built-in filter-map/append-map.
+;; mit-scheme's filter-map is non-tail and overflows the stack around ~300k
+;; items, which breaks find-contradictions on a large KB (e.g. 769 non-predicate
+;; facts → 295k pairs). These definitions shadow the built-ins within this file.
+
+(define (filter-map f lst)
+  (let loop ((remaining lst) (acc '()))
+    (if (null? remaining)
+        (reverse acc)
+        (let ((v (f (car remaining))))
+          (loop (cdr remaining)
+                (if v (cons v acc) acc))))))
+
+(define (append-map f lst)
+  (let outer ((remaining lst) (acc '()))
+    (if (null? remaining)
+        (reverse acc)
+        (let inner ((items (f (car remaining))) (a acc))
+          (if (null? items)
+              (outer (cdr remaining) a)
+              (inner (cdr items) (cons (car items) a)))))))
+
 (define (var? x)
   (and (symbol? x)
        (let ((s (symbol->string x)))
@@ -145,10 +167,13 @@
            (newline)))))
 
 (define (pairs lst)
-  (if (null? lst)
-      '()
-      (append (map (lambda (y) (cons (car lst) y)) (cdr lst))
-              (pairs (cdr lst)))))
+  (let outer ((remaining lst) (acc '()))
+    (if (null? remaining)
+        acc
+        (let inner ((rest (cdr remaining)) (a acc))
+          (if (null? rest)
+              (outer (cdr remaining) a)
+              (inner (cdr rest) (cons (cons (car remaining) (car rest)) a)))))))
 
 (define (same-prefix? prefix xs)
   (cond ((null? prefix) #t)
