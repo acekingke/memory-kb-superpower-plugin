@@ -8,7 +8,7 @@ fi
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ACTION="$1"
-TMP="$(mktemp "${TMPDIR:-/tmp}/memory-kb-action.XXXXXX.scm")"
+TMP="$(mktemp "${TMPDIR:-/tmp}/memory-kb-action.XXXXXX")"
 trap 'rm -f "$TMP"' EXIT
 
 {

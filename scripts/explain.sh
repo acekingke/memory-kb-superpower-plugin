@@ -7,7 +7,7 @@ if [ "$#" -ne 1 ]; then
 fi
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TMP="$(mktemp "${TMPDIR:-/tmp}/memory-kb-explain.XXXXXX.scm")"
+TMP="$(mktemp "${TMPDIR:-/tmp}/memory-kb-explain.XXXXXX")"
 trap 'rm -f "$TMP"' EXIT
 
 {
