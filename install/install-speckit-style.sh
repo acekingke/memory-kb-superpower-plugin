@@ -32,6 +32,14 @@ copy_dir "$SOURCE_ROOT/tests" "$RUNTIME_DIR/tests"
 copy_dir "$SOURCE_ROOT/mcp" "$RUNTIME_DIR/mcp"
 cp "$SOURCE_ROOT/.mcp.json" "$RUNTIME_DIR/.mcp.json"
 cp "$SOURCE_ROOT/README.md" "$RUNTIME_DIR/README.md"
+if [ -f "$SOURCE_ROOT/package.json" ]; then
+  cp "$SOURCE_ROOT/package.json" "$RUNTIME_DIR/package.json"
+  if [ -f "$SOURCE_ROOT/package-lock.json" ]; then
+    cp "$SOURCE_ROOT/package-lock.json" "$RUNTIME_DIR/package-lock.json"
+  fi
+  (cd "$RUNTIME_DIR" && npm install --no-audit --no-fund >/dev/null 2>&1) || \
+    echo "warning: npm install failed; MCP server may not start" >&2
+fi
 
 chmod +x "$RUNTIME_DIR"/scripts/*.sh
 chmod +x "$RUNTIME_DIR"/mcp/*.js
