@@ -31,6 +31,20 @@ copy_dir "$SOURCE_ROOT/docs" "$RUNTIME_DIR/docs"
 copy_dir "$SOURCE_ROOT/tests" "$RUNTIME_DIR/tests"
 copy_dir "$SOURCE_ROOT/mcp" "$RUNTIME_DIR/mcp"
 cp "$SOURCE_ROOT/.mcp.json" "$RUNTIME_DIR/.mcp.json"
+
+# Claude Code only discovers MCP servers from a .mcp.json at the project
+# root, and its relative paths resolve from there.
+cat > "$TARGET_ROOT/.mcp.json" <<EOF
+{
+  "mcpServers": {
+    "memory-kb": {
+      "command": "node",
+      "args": ["./.agents/memory-kb/mcp/server-stdio.js"]
+    }
+  }
+}
+EOF
+
 cp "$SOURCE_ROOT/README.md" "$RUNTIME_DIR/README.md"
 if [ -f "$SOURCE_ROOT/package.json" ]; then
   cp "$SOURCE_ROOT/package.json" "$RUNTIME_DIR/package.json"
