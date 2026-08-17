@@ -2,6 +2,16 @@
 
 A generic Scheme-backed memory and reasoning plugin prototype.
 
+![Agent session demo](demo2.gif)
+
+*Natural language in, checked Scheme facts out — a coding agent remembers,
+recalls, and gates risky actions through the Memory KB MCP tools.*
+
+![Engine demo](demo.gif)
+
+*Under the hood: writes are validated, conflicting facts rejected, derivations
+carry provenance, and everything is undoable with git.*
+
 The plugin lets an AI assistant:
 
 - remember generic facts and rules
