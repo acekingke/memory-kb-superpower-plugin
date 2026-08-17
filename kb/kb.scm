@@ -96,6 +96,9 @@
 
 ;; ---- user memories are appended below this line by checked tools ----
 ;; MANUAL MEMORY START
+(fact! '(status promote-plugin in-progress))
+(fact! '(task promote-plugin make-repo-public publish-tweet))
+(fact! '(dep publish-tweet make-repo-public))
 ;; MANUAL MEMORY END
 
 ;; ---- introspection ----
