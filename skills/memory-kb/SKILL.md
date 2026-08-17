@@ -48,10 +48,13 @@ Run from the plugin root:
 
 ```sh
 scripts/check-kb.sh
+scripts/recall.sh "(predicate ?name ?arity)"
 scripts/recall.sh "(prefers ?who ?key ?value)"
 scripts/remember-fact.sh "(prefers user language zh-CN)"
 scripts/explain.sh "(contradiction ?message ?x ?y)"
 ```
+
+Before drilling into specific facts, run `recall.sh "(predicate ?name ?arity)"` to enumerate the predicates that currently exist in the KB — this sees both literal `fact!` predicates and rule-derived ones. Do not `Read` `kb/kb.scm` to discover structure.
 
 `remember-fact.sh` only accepts a single Scheme fact expression. More complex changes should be generated as a patch and checked against a candidate KB before applying.
 
