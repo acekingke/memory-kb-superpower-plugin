@@ -2,7 +2,39 @@
 set -euo pipefail
 
 SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TARGET_ROOT="${1:-$(pwd)}"
+
+# Install mode: by default the MCP server is included. --no-mcp installs the
+# plugin/skills only (no Node, no npm, no .mcp.json) — MIT Scheme suffices.
+INSTALL_MCP=1
+TARGET_ROOT=""
+for arg in "$@"; do
+  case "$arg" in
+    --no-mcp)
+      INSTALL_MCP=0
+      ;;
+    -h | --help)
+      echo "usage: install/install-speckit-style.sh [--no-mcp] /path/to/project"
+      echo
+      echo "Installs the Memory KB plugin into a target project's .agents/ tree."
+      echo
+      echo "  --no-mcp   skip the MCP server, package.json, npm install, and"
+      echo "             project-root .mcp.json; installs skills/slash commands"
+      echo "             only (requires just MIT Scheme)"
+      exit 0
+      ;;
+    -* )
+      echo "unknown option: $arg" >&2
+      exit 64
+      ;;
+    * )
+      TARGET_ROOT="$arg"
+      ;;
+  esac
+done
+
+if [ -z "$TARGET_ROOT" ]; then
+  TARGET_ROOT="$(pwd)"
+fi
 
 if [ ! -d "$TARGET_ROOT" ]; then
   echo "target project does not exist: $TARGET_ROOT" >&2
@@ -29,12 +61,24 @@ copy_dir "$SOURCE_ROOT/scripts" "$RUNTIME_DIR/scripts"
 copy_dir "$SOURCE_ROOT/prompts" "$RUNTIME_DIR/prompts"
 copy_dir "$SOURCE_ROOT/docs" "$RUNTIME_DIR/docs"
 copy_dir "$SOURCE_ROOT/tests" "$RUNTIME_DIR/tests"
-copy_dir "$SOURCE_ROOT/mcp" "$RUNTIME_DIR/mcp"
-cp "$SOURCE_ROOT/.mcp.json" "$RUNTIME_DIR/.mcp.json"
+if [ "$INSTALL_MCP" -eq 1 ]; then
+  copy_dir "$SOURCE_ROOT/mcp" "$RUNTIME_DIR/mcp"
+  cp "$SOURCE_ROOT/.mcp.json" "$RUNTIME_DIR/.mcp.json"
+fi
 
-# Claude Code only discovers MCP servers from a .mcp.json at the project
-# root, and its relative paths resolve from there.
-cat > "$TARGET_ROOT/.mcp.json" <<EOF
+if [ "$INSTALL_MCP" -eq 1 ]; then
+  # Claude Code only discovers MCP servers from a .mcp.json at the project
+  # root, and its relative paths resolve from there.
+  if [ -f "$TARGET_ROOT/.mcp.json" ]; then
+    if grep -q '"memory-kb"' "$TARGET_ROOT/.mcp.json"; then
+      echo "note: $TARGET_ROOT/.mcp.json already registers memory-kb; leaving it unchanged"
+    else
+      echo "error: $TARGET_ROOT/.mcp.json exists but does not register memory-kb;" >&2
+      echo "       merge the memory-kb entry manually instead of overwriting." >&2
+      exit 64
+    fi
+  else
+    cat > "$TARGET_ROOT/.mcp.json" <<EOF
 {
   "mcpServers": {
     "memory-kb": {
@@ -44,9 +88,11 @@ cat > "$TARGET_ROOT/.mcp.json" <<EOF
   }
 }
 EOF
+  fi
+fi
 
 cp "$SOURCE_ROOT/README.md" "$RUNTIME_DIR/README.md"
-if [ -f "$SOURCE_ROOT/package.json" ]; then
+if [ "$INSTALL_MCP" -eq 1 ] && [ -f "$SOURCE_ROOT/package.json" ]; then
   cp "$SOURCE_ROOT/package.json" "$RUNTIME_DIR/package.json"
   if [ -f "$SOURCE_ROOT/package-lock.json" ]; then
     cp "$SOURCE_ROOT/package-lock.json" "$RUNTIME_DIR/package-lock.json"
@@ -56,7 +102,9 @@ if [ -f "$SOURCE_ROOT/package.json" ]; then
 fi
 
 chmod +x "$RUNTIME_DIR"/scripts/*.sh
-chmod +x "$RUNTIME_DIR"/mcp/*.js
+if [ "$INSTALL_MCP" -eq 1 ]; then
+  chmod +x "$RUNTIME_DIR"/mcp/*.js
+fi
 
 write_skill() {
   local name="$1"
@@ -163,6 +211,11 @@ EOF
 
 echo "Installed Memory KB into: $TARGET_ROOT"
 echo "Runtime: $RUNTIME_DIR"
+if [ "$INSTALL_MCP" -eq 1 ]; then
+  echo "MCP server: enabled (mcp/, .mcp.json, npm install)"
+else
+  echo "MCP server: skipped (--no-mcp); only MIT Scheme is required"
+fi
 echo "Skills:"
 echo "  $SKILLS_DIR/memory-kb-check"
 echo "  $SKILLS_DIR/memory-kb-recall"

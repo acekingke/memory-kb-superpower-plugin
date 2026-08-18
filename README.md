@@ -2,10 +2,16 @@
 
 **Code is memory.** A Scheme-backed memory and reasoning plugin for coding agents.
 
-![Agent session demo](demo2.gif)
+![Plugin demo — `/memory-kb-*` slash commands inside a Claude Code session](demo3.gif)
 
-*Natural language in, checked Scheme facts out — a coding agent remembers,
-recalls, and gates risky actions through the Memory KB MCP tools.*
+*Installed as a plugin (no MCP), the user-invocable `/memory-kb-*` commands
+work directly inside the agent session: `/memory-kb-recall (task ?x ?y)`
+returns matching facts from the project KB.*
+
+![MCP demo — agent session via MCP tools](demo2.gif)
+
+*The same engine exposed as MCP tools for MCP-capable clients — natural
+language in, checked Scheme facts out.*
 
 ![Engine demo](demo.gif)
 
@@ -18,7 +24,7 @@ The plugin lets an AI assistant:
 - model business domains before implementation
 - check planned actions against constraints
 - use MIT Scheme for deterministic inference
-- expose the KB through MCP tools
+- expose the KB as user-invocable `/memory-kb-*` commands and as MCP tools
 - keep domain-specific knowledge out of plugin defaults
 
 ## Advantages
@@ -64,14 +70,119 @@ The plugin lets an AI assistant:
 ### Prerequisites
 
 - [MIT Scheme](https://www.gnu.org/software/mit-scheme/) — the reasoning
-  engine (`brew install mit-scheme` on macOS)
-- Node.js >= 18 with npm — the MCP server
+  engine (`brew install mit-scheme` on macOS). This is the only runtime the
+  plugin itself needs.
+- Node.js >= 18 with npm — only for the optional MCP server (Option B).
 
 Sanity check that the engine runs:
 
 ```sh
 mit-scheme --quiet --batch-mode < kb/check.scm
 ```
+
+### Option A — Install as a plugin (no MCP)
+
+The primary installation path. It installs the Memory KB as user-invocable
+skills (slash commands) that drive the Scheme scripts directly. No Node.js,
+no npm, no MCP server — just MIT Scheme.
+
+#### A1. Into a project (Claude Code / Codex / superpowers-style agents)
+
+```sh
+install/install-speckit-style.sh /path/to/project
+```
+
+Add `--no-mcp` to skip every MCP artifact (`mcp/`, `package.json`, the
+project-root `.mcp.json`) and the `npm install`:
+
+```sh
+install/install-speckit-style.sh --no-mcp /path/to/project
+```
+
+This creates:
+
+```text
+.agents/
+  memory-kb/            # runtime: kb/, scripts/, prompts/, docs/, tests/
+  skills/               # user-invocable skills → slash commands
+    memory-kb-check/
+    memory-kb-recall/
+    memory-kb-explain/
+    memory-kb-before-action/
+  memory-kb-CLAUDE.md   # agent-facing install notes
+```
+
+The agent in that project then exposes four user-invocable commands:
+
+- `/memory-kb-check` — check consistency, structure, and duplicates
+- `/memory-kb-recall <pattern>` — recall facts matching a Scheme pattern
+- `/memory-kb-before-action <fact>` — gate a planned action
+- `/memory-kb-explain <pattern-or-last-rejection>` — provenance chain
+
+`/memory-kb-explain` is opt-in. Normal checks stay concise and do not show
+provenance unless the user asks for the evidence chain.
+
+Verify from the target project root:
+
+```sh
+cd /path/to/project
+.agents/memory-kb/scripts/test-all.sh
+```
+
+Expected result:
+
+```text
+all checks passed
+```
+
+(In a `--no-mcp` install the MCP smoke test is skipped; the Scheme tests
+still report `all checks passed`.)
+
+#### A2. As a Codex / ChatGPT plugin
+
+The repository itself is a Codex plugin: `.codex-plugin/plugin.json`
+packages `skills/` and the optional MCP server for the ChatGPT/Codex
+Plugins Directory.
+
+Add a local marketplace so the desktop app can install it. The canonical
+repo-marketplace layout is:
+
+```sh
+mkdir -p /path/to/project/plugins
+cp -R /path/to/memory-kb-superpower-plugin /path/to/project/plugins/memory-kb-superpower-plugin
+```
+
+`/path/to/project/.agents/plugins/marketplace.json`:
+
+```json
+{
+  "name": "local-repo",
+  "plugins": [
+    {
+      "name": "memory-kb-superpower-plugin",
+      "source": { "source": "local", "path": "./plugins/memory-kb-superpower-plugin" },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "category": "Productivity"
+    }
+  ]
+}
+```
+
+The same entry works as a personal marketplace at
+`~/.agents/plugins/marketplace.json` with the plugin stored under
+`~/.codex/plugins/` — `source.path` resolves relative to the marketplace
+root. After restarting the ChatGPT desktop app, open the Plugins Directory,
+select the marketplace, and install the plugin; the bundled `memory-kb`
+skill becomes available. For a skills-only plugin without the MCP server,
+remove the `"mcpServers"` entry from `.codex-plugin/plugin.json` before
+installing.
+
+### Option B — MCP server (optional)
+
+The same engine is also exposed as an MCP server for MCP-capable clients
+(tools `memory_kb_check`, `memory_kb_recall`, `memory_kb_before_action`,
+`memory_kb_explain`, `memory_kb_context_files`, `memory_kb_remember_fact`).
+Requires `npm install`; see the [MCP Server](#mcp-server) section.
 
 ### Use in this repository
 
@@ -82,57 +193,6 @@ node scripts/test-mcp.js   # MCP smoke test → "mcp checks passed"
 ```
 
 The stdio MCP server is registered in `.mcp.json` at the repository root.
-
-### Install into another project (speckit-style)
-
-Installs runtime files under `.agents/memory-kb/` and user-invocable skills
-under `.agents/skills/*`:
-
-```sh
-install/install-speckit-style.sh /path/to/project
-```
-
-This creates:
-
-```text
-.agents/
-  memory-kb/
-    kb/
-    scripts/
-    prompts/
-    docs/
-    tests/
-    mcp/
-    .mcp.json
-  skills/
-    memory-kb-check/
-    memory-kb-recall/
-    memory-kb-explain/
-    memory-kb-before-action/
-  memory-kb-CLAUDE.md
-```
-
-After installation, test from the target project root:
-
-```sh
-.agents/memory-kb/scripts/test-all.sh
-```
-
-Expected result:
-
-```text
-all checks passed
-```
-
-The installed user-invocable commands are:
-
-- `/memory-kb-check`
-- `/memory-kb-recall`
-- `/memory-kb-before-action`
-- `/memory-kb-explain`
-
-`/memory-kb-explain` is opt-in. Normal checks should stay concise and should
-not show provenance unless the user asks for the evidence chain.
 
 ## Quick Start
 
@@ -163,12 +223,98 @@ or vertical-bar symbols for case-sensitive values:
 
 For complex memory updates, generate a patch to `kb/kb.scm`, apply it to a candidate copy, run checks, and only then apply it to the real KB.
 
+## Demo: `/memory-kb-recall (task ?x ?y)`
+
+The demo runs in a scratch project (`/tmp/test`) so the plugin repository's
+own KB stays untouched. It installs the plugin the non-MCP way (`--no-mcp`)
+and is recorded live in a real Claude Code session (`demo3.gif`):
+
+![Plugin slash-command demo](demo3.gif)
+
+Inside the session the user invokes `/memory-kb-recall (task ?x ?y)` and
+Claude runs the installed script behind the slash command. Reproducing it
+step by step:
+
+```sh
+install/install-speckit-style.sh --no-mcp /tmp/test
+```
+
+```text
+Installed Memory KB into: /tmp/test
+Runtime: /tmp/test/.agents/memory-kb
+MCP server: skipped (--no-mcp); only MIT Scheme is required
+Skills:
+  /tmp/test/.agents/skills/memory-kb-check
+  /tmp/test/.agents/skills/memory-kb-recall
+  /tmp/test/.agents/skills/memory-kb-explain
+  /tmp/test/.agents/skills/memory-kb-before-action
+
+Run:
+  cd "/tmp/test" && .agents/memory-kb/scripts/test-all.sh
+```
+
+Record a task fact (it is checked for consistency before it is stored):
+
+```sh
+cd /tmp/test
+.agents/memory-kb/scripts/remember-fact.sh "(task improve-readme write-plugin-usage)"
+```
+
+```text
+OK (task improve-readme write-plugin-usage)
+derived-delta: ((task improve-readme write-plugin-usage))
+```
+
+The fact is appended to the project KB (`kb/kb.scm`) — auditable and
+diffable like any source change. Now the user invokes the slash command:
+
+```text
+/memory-kb-recall (task ?x ?y)
+```
+
+The agent runs the installed script behind that command:
+
+```sh
+.agents/memory-kb/scripts/recall.sh "(task ?x ?y)"
+```
+
+```text
+(task improve-readme write-plugin-usage)
+```
+
+`?x` and `?y` are pattern variables: the query returns every `task` fact
+with two arguments. Provenance stays hidden by default; ask for it
+explicitly:
+
+```text
+/memory-kb-explain (task ?x ?y)
+```
+
+```sh
+.agents/memory-kb/scripts/explain.sh "(task ?x ?y)"
+```
+
+```text
+BASE (task improve-readme write-plugin-usage)
+```
+
+And the KB stays healthy:
+
+```sh
+.agents/memory-kb/scripts/test-all.sh
+```
+
+```text
+skipping MCP smoke test (plugin-only install without mcp/)
+all checks passed
+```
+
 ## MCP Server
 
 The plugin includes a no-dependency stdio MCP server:
 
 ```text
-mcp/server.js
+mcp/server-stdio.js
 .mcp.json
 ```
 
@@ -245,7 +391,9 @@ Expected result:
 all checks passed
 ```
 
-This covers generic forbidden actions, domain capability constraints, preference conflicts, and provenance recording.
+This covers generic forbidden actions, domain capability constraints,
+preference conflicts, provenance recording, and — when `mcp/` is present —
+the MCP smoke test. In a `--no-mcp` plugin install the smoke test is skipped.
 
 ### 2. CLI Behavior Tests
 
@@ -323,7 +471,7 @@ Build a permission system: general manager > department manager > project lead. 
 Expected behavior: Claude models the business domain before coding and records the relevant hierarchy and invariants.
 
 ```text
-/memory-explain last rejection
+/memory-kb-explain last rejection
 ```
 
 Expected behavior: Claude shows the provenance chain only because the user explicitly requested it.
@@ -355,22 +503,21 @@ Not yet implemented:
 
 ## Slash Command Convention
 
-The assistant should keep reasoning explanations hidden by default. If the user
-asks for the evidence chain, use this slash-style command convention:
+The project install exposes four user-invocable commands. The assistant
+should keep reasoning explanations hidden by default and expand the evidence
+chain only when the user invokes `/memory-kb-explain` or explicitly asks.
 
-```text
-/memory-explain <scheme-pattern-or-last-result>
-```
+| Command | Maps to |
+| --- | --- |
+| `/memory-kb-check` | `scripts/check-kb.sh` |
+| `/memory-kb-recall <pattern>` | `scripts/recall.sh "<pattern>"` |
+| `/memory-kb-before-action <fact>` | `scripts/before-action.sh "<fact>"` |
+| `/memory-kb-explain <pattern-or-last-result>` | `scripts/explain.sh "<pattern>"` |
 
-The command maps to:
-
-```sh
-scripts/explain.sh "<scheme-pattern>"
-```
-
-Example:
+Examples:
 
 ```sh
+scripts/recall.sh "(task ?x ?y)"
 scripts/explain.sh "(contradiction ?message ?domain ?actor ?capability)"
 ```
 

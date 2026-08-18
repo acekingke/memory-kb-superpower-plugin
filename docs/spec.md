@@ -326,12 +326,12 @@ This requires provenance support in the inference engine.
 
 Explanations should be opt-in. The default workflow should report concise
 results only. If the user asks for evidence or uses the slash-style command
-`/memory-explain`, the plugin should show the provenance chain.
+`/memory-kb-explain`, the plugin should show the provenance chain.
 
 Suggested convention:
 
 ```text
-/memory-explain <pattern-or-last-result>
+/memory-kb-explain <pattern-or-last-result>
 ```
 
 ## 8. Core Workflows

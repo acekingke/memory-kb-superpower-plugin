@@ -68,7 +68,7 @@ why a result was derived, or uses a slash command, expand the evidence chain.
 Recognize:
 
 ```text
-/memory-explain <pattern-or-last-result>
+/memory-kb-explain <pattern-or-last-result>
 ```
 
 Use `scripts/explain.sh` to show matching facts and the rule/premise chain that produced them.

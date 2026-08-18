@@ -3,3 +3,4 @@ config/tokens.json
 storage/users/
 *.log
 .DS_Store
+.local/
