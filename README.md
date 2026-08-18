@@ -1,6 +1,6 @@
 # Memory KB Superpower Plugin
 
-A generic Scheme-backed memory and reasoning plugin prototype.
+**Code is memory.** A Scheme-backed memory and reasoning plugin for coding agents.
 
 ![Agent session demo](demo2.gif)
 
